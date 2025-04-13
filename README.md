@@ -2,7 +2,7 @@
 
 DBVSG is a database versioning and auditing system that works like Git for SQL tables. Each write operation creates a snapshot (commit) of the table's full state, allowing rollback, merge, restore, and checkout operations — all with full traceability.
 
----
+<br />
 
 ## Features
 
@@ -15,7 +15,7 @@ DBVSG is a database versioning and auditing system that works like Git for SQL t
 - Only one current version per table (like Git HEAD)
 - Soft delete with recovery support
 
----
+<br />
 
 ## How It Works
 
@@ -33,7 +33,7 @@ Each version includes:
 - `state` snapshot (the full table at that point)
 - Metadata in JSON format
 
----
+<br />
 
 ## Supported Operations
 
@@ -46,7 +46,7 @@ Each version includes:
 | `vsg.checkout(uuid)` | Restores and commits a new version               |
 | `vsg.logs(...)`      | Lists versioned commits for a table              |
 
----
+<br />
 
 ## Installation
 
@@ -62,7 +62,7 @@ Requirements:
 - psycopg2
 - Flask (example app)
 
----
+<br />
 
 ## Table Schema: `db_vsg`
 
@@ -85,7 +85,7 @@ CREATE TABLE db_vsg (
 );
 ```
 
----
+<br />
 
 ## Example (Flask)
 
@@ -99,7 +99,7 @@ def create_client():
     return jsonify({'id': new_id, 'name': name}), 201
 ```
 
----
+<br />
 
 ## API Endpoints (REST)
 
@@ -115,7 +115,7 @@ def create_client():
 | POST   | `/vsg/merge/<uuid>`     | Merge a version into current           |
 | POST   | `/vsg/checkout/<uuid>`  | Restore and register as new version    |
 
----
+<br />
 
 ## Log Output Example
 
@@ -131,7 +131,7 @@ def create_client():
 ]
 ```
 
----
+<br />
 
 ## Test Script
 
@@ -150,16 +150,3 @@ This script tests:
 - Restore
 - Merge
 
----
-
-## License
-
-MIT License
-
----
-
-## Author
-
-Gabriel Fernandes OSS/ACC — Software Developer and
-
-```
