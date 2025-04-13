@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: "demo"
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "secret"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - dbnet
+
+volumes:
+  postgres_data:
+
+networks:
+  dbnet:
+    driver: bridge
