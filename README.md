@@ -1,4 +1,4 @@
-# DBVSG - Database Versioning Snapshot Git
+# DBVSG - Database Versioning Snapshot
 
 DBVSG is a database versioning and auditing system that works like Git for SQL tables. Each write operation creates a snapshot (commit) of the table's full state, allowing rollback, merge, restore, and checkout operations — all with full traceability.
 
