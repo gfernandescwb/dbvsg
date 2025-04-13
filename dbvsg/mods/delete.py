@@ -5,7 +5,7 @@ from ..utils.logger import logger
 from ..utils.read_sql import load_sql
 
 def delete(self, target_uuid: str, deleted_by: str = "system"):
-    assert self.connection, "Conexão não iniciada"
+    assert self.connection, "Connection not started"
     try:
         with self.connection.cursor() as cur:
             cur.execute("SELECT * FROM db_vsg WHERE uuid = %s", (target_uuid,))

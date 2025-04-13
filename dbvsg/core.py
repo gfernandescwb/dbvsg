@@ -13,7 +13,6 @@ class DBVSG:
         self.user_callback = None
 
     def conn(self, db_url: str, user_context=None):
-        """Inicializa a conexão e define função de usuário"""
         self.user_callback = user_context
         conn(self, db_url)
         ensure_table(self)
@@ -30,10 +29,10 @@ class DBVSG:
     def merge(self, incoming_uuid: str):
         return merge(self, incoming_uuid)
 
-    def checkout(self, uuid: str):
-        return checkout(self, uuid)
+    def checkout(self, target_uuid: str):
+        return checkout(self, target_uuid)
 
-    def logs(self, table: str, limit: int = 20):
+    def logs(self, table: str, limit: int = 10):
         return logs(self, table=table, limit=limit)
 
     def _hash_blob(self, blob: str) -> str:

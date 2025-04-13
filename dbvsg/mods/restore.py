@@ -3,34 +3,29 @@ from ..utils.logger import logger
 import psycopg2.extras
 
 def restore(self, uuid: str):
-    assert self.connection, "Conexão não iniciada"
+    assert self.connection
+
     try:
         with self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute("SELECT * FROM db_vsg WHERE uuid = %s", (uuid,))
-            version = cur.fetchone()
-            if not version:
-                logger.warning(f"UUID {uuid} não encontrado para restore.")
-                return None
+            snapshot = cur.fetchone()
+            if not snapshot:
+                return False
 
-            blob = json.loads(version["blob"])
-            table = blob.get("table")
-            state = blob.get("state")
-
-            if not table or not state:
-                logger.warning(f"Versão {uuid} não contém estado restaurável.")
-                return None
+            blob = json.loads(snapshot["blob"])
+            table = blob["table"]
+            state = blob["state"]
 
             cur.execute(f"DELETE FROM {table}")
             for row in state:
-                columns = ", ".join(row.keys())
-                values = [row[k] for k in row]
-                placeholders = ", ".join(["%s"] * len(values))
-                cur.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", values)
+                keys = ", ".join(row.keys())
+                placeholders = ", ".join(["%s"] * len(row))
+                cur.execute(f"INSERT INTO {table} ({keys}) VALUES ({placeholders})", list(row.values()))
 
             self.connection.commit()
-            logger.info(f"Restore concluído da versão {uuid} para tabela '{table}'")
+            logger.info(f"Restored table {table} to snapshot {uuid}")
             return True
 
     except Exception as e:
-        logger.error(f"Restore - (FAILED) - {str(e)}")
+        logger.error(f"Restore failed - {str(e)}")
         raise

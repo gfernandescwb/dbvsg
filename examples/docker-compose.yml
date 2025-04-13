@@ -6,6 +6,7 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5433:5432"
     networks:
@@ -13,8 +14,8 @@ services:
 
   api:
     build:
-      context: ../../
-      dockerfile: database_versioning/examples/api/Dockerfile
+      context: ../
+      dockerfile: ./examples/Dockerfile
     depends_on:
       - db
     ports:

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "⏳ Waiting 1s before checking PostgreSQL readiness..."
+echo "Waiting 1s before checking PostgreSQL readiness..."
 sleep 1
 
 python <<EOF

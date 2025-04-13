@@ -1,26 +1,33 @@
 #!/bin/bash
 set -e
 
-echo "Create client 1"
-curl -s -X POST http://localhost:5000/clients -H "Content-Type: application/json" -d '{"name": "Client 1"}' | jq
+echo "Creating base record"
+curl -s -X POST http://localhost:5000/clients \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Ancestor"}' | jq
 
-echo "Create client 2"
-curl -s -X POST http://localhost:5000/clients -H "Content-Type: application/json" -d '{"name": "Client 2"}' | jq
-
-echo "Show commits"
-curl -s "http://localhost:5000/vsg/logs?table=clients&limit=5" | jq
-
-echo "Get current UUID"
+echo "Getting UUID of base commit"
 UUID=$(curl -s "http://localhost:5000/vsg/logs?table=clients&limit=1" | jq -r '.[0].uuid')
+echo "Base UUID: $UUID"
 
-echo "CHECKOUT to UUID $UUID"
+echo "Performing checkout (simulates user A holding this base)"
 curl -s -X POST http://localhost:5000/vsg/checkout/$UUID | jq
 
-echo "ROLLBACK"
-curl -s -X POST http://localhost:5000/vsg/rollback | jq
+echo "Modifying record with Client A (will become current)"
+curl -s -X POST http://localhost:5000/clients \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Client A"}' | jq
 
-echo "RESTORE with UUID $UUID"
+echo "Restoring to old base again (simulates user B using outdated base)"
 curl -s -X POST http://localhost:5000/vsg/restore/$UUID | jq
 
-echo "MERGE with UUID $UUID"
-curl -s -X POST http://localhost:5000/vsg/merge/$UUID | jq
+echo "User B tries to write a new commit based on outdated base (should fail)"
+curl -s -X POST http://localhost:5000/clients \
+    -H "Content-Type: application/json" \
+    -d '{"name": "Client B"}' | jq
+
+echo "Final table state:"
+curl -s http://localhost:5000/clients | jq
+
+echo "Final commit log:"
+curl -s "http://localhost:5000/vsg/logs?table=clients&limit=10" | jq

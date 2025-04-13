@@ -15,7 +15,7 @@ def logs(self, table: str, limit: int = 20):
             """, (table, limit))
 
             results = cur.fetchall()
-            logger.info(f"{len(results)} commits listados para a tabela '{table}'")
+            logger.info(f"{len(results)} - '{table}'")
             return results
 
     except Exception as e:
