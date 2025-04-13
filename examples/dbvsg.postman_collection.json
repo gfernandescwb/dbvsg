@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "DBVSG API",
+    "_postman_id": "REPLACE-WITH-YOUR-ID",
+    "description": "Versioning and auditing endpoints for DBVSG.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create Client",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"name\": \"John Doe\" }"
+        },
+        "url": {
+          "raw": "http://localhost:5000/clients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["clients"]
+        }
+      }
+    },
+    {
+      "name": "List Clients",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5000/clients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["clients"]
+        }
+      }
+    },
+    {
+      "name": "Audit Clients",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5000/audit/clients",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["audit", "clients"]
+        }
+      }
+    },
+    {
+      "name": "Rollback (Current)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:5000/vsg/rollback",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "rollback"]
+        }
+      }
+    },
+    {
+      "name": "Rollback (UUID)",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:5000/vsg/rollback/{{uuid}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "rollback", "{{uuid}}"]
+        }
+      }
+    },
+    {
+      "name": "Restore",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:5000/vsg/restore/{{uuid}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "restore", "{{uuid}}"]
+        }
+      }
+    },
+    {
+      "name": "Merge",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:5000/vsg/merge/{{uuid}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "merge", "{{uuid}}"]
+        }
+      }
+    },
+    {
+      "name": "Checkout",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "http://localhost:5000/vsg/checkout/{{uuid}}",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "checkout", "{{uuid}}"]
+        }
+      }
+    },
+    {
+      "name": "Logs",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "http://localhost:5000/vsg/logs?table=clients&limit=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["vsg", "logs"],
+          "query": [
+            { "key": "table", "value": "clients" },
+            { "key": "limit", "value": "10" }
+          ]
+        }
+      }
+    }
+  ]
+}

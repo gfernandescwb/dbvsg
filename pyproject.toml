@@ -1,0 +1,11 @@
+[project]
+name = "database-versioning"
+version = "0.1.0"
+description = "Database versioning for audit"
+authors = [{name = "Gabriel Fernandes"}]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["psycopg2"]
+
+[tool.uv]
+virtualenvs.in-project = true
