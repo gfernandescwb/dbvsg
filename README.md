@@ -1,52 +1,56 @@
 # DBVSG - Database Versioning Snapshot
 
-DBVSG is a database versioning and auditing system that works like Git for SQL tables. Each write operation creates a snapshot (commit) of the table's full state, allowing rollback, merge, restore, and checkout operations — all with full traceability.
+**DBVSG** is a version control system for SQL tables that functions like Git — each operation creates a snapshot of the entire table state. It enables commits, rollbacks, checkouts, restores, and merges with complete traceability and integrity enforcement. Only one version can be marked as "current" at any given time, just like a Git `HEAD`.
 
-<br />
+<br/>
 
 ## Features
 
-- Full version control for insert/update/delete operations
-- Snapshot of the entire table state on every change
-- Rollback to any previous version
-- Merge a historical state into the current one
-- Checkout a version and register it as a new commit
-- Track user, timestamp, and operation metadata
-- Only one current version per table (like Git HEAD)
-- Soft delete with recovery support
+- Full table snapshot stored on every change (INSERT, UPDATE, DELETE)
+- Conflict prevention based on parent commit reference (`parent_uuid`)
+- Rollback to previous versions as new commits
+- Restore a historical version without creating a commit
+- Checkout a version and commit it as a new head
+- Merge divergent versions into the current one
+- Audit log with user, timestamp, UUID and hash
+- Git-style `state`, `before`, and `after` comparison
+- Only one `is_current = true` per table
 
-<br />
+<br/>
 
 ## How It Works
 
-When calling `vsg.ops(...)`, the system:
+When `vsg.ops(...)` is executed:
 
-1. Executes the provided SQL query
-2. Captures the full state of the table before and after the operation
-3. Registers the operation in `db_vsg` as a versioned commit
-4. Marks this version as the current one and clears previous current flags
-5. Stores metadata (user, operation, UUID, timestamp, SHA256 hash)
+1. The raw SQL is executed and the inserted record's `id` is retrieved
+2. The current version (`is_current = TRUE`) is fetched
+3. If the operation is based on a version that is not the current one, it is rejected (conflict)
+4. A snapshot of the entire table is taken
+5. The operation is recorded in the audit table (`db_vsg`) with metadata and full blob
+6. The new version becomes `is_current`, and previous versions are unmarked
 
-Each version includes:
-- `before` state
-- `after` state
-- `state` snapshot (the full table at that point)
-- Metadata in JSON format
+Each commit stores:
+- `before`: table state before the change
+- `after`: table state after the change
+- `state`: the full table at this version
+- `meta`: JSON metadata with `record_id`, `table`, and `parent`
 
-<br />
+<br/>
 
 ## Supported Operations
 
-| Method               | Description                                      |
-|----------------------|--------------------------------------------------|
-| `vsg.ops(...)`       | Executes a query and registers a version         |
-| `vsg.rollback()`     | Creates a new version based on the previous state|
-| `vsg.restore(uuid)`  | Restores a version without creating a new commit |
-| `vsg.merge(uuid)`    | Merges another version and creates a new one     |
-| `vsg.checkout(uuid)` | Restores and commits a new version               |
-| `vsg.logs(...)`      | Lists versioned commits for a table              |
+| Method               | Description                                        |
+|----------------------|----------------------------------------------------|
+| `vsg.ops(...)`       | Executes a write query and saves full snapshot     |
+| `vsg.rollback()`     | Commits a previous state as a new version          |
+| `vsg.restore(uuid)`  | Restores a previous version (no commit)            |
+| `vsg.merge(uuid)`    | Merges a previous version into the current version |
+| `vsg.checkout(uuid)` | Restores a version and commits it as current       |
+| `vsg.logs(table)`    | Lists all commits for a given table                |
 
-<br />
+> Commits are rejected if not based on the current `HEAD` version, ensuring linear history unless explicitly merged.
+
+<br/>
 
 ## Installation
 
@@ -56,15 +60,15 @@ cd dbvsg
 pip install -e .
 ```
 
-Requirements:
+**Requirements:**
 - Python 3.11+
-- PostgreSQL
-- psycopg2
-- Flask (example app)
+- PostgreSQL 13+
+- `psycopg2`
+- Optional: Flask (for example usage)
 
-<br />
+<br/>
 
-## Table Schema: `db_vsg`
+## Audit Table Schema (`db_vsg`)
 
 ```sql
 CREATE TABLE db_vsg (
@@ -74,79 +78,86 @@ CREATE TABLE db_vsg (
     meta JSON,
     hash TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    is_current BOOLEAN DEFAULT TRUE,
-    rollbacked BOOLEAN DEFAULT FALSE,
+    is_current BOOLEAN NOT NULL DEFAULT TRUE,
+    parent_uuid UUID,
+    rollbacked BOOLEAN NOT NULL DEFAULT FALSE,
     rollbacked_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP,
-    is_deleted BOOLEAN DEFAULT FALSE,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     deleted_by TEXT,
     blob TEXT NOT NULL
 );
 ```
 
-<br />
+<br/>
 
-## Example (Flask)
+## Example Usage
 
 ```python
-@main.route('/clients', methods=['POST'])
-def create_client():
-    data = request.get_json()
-    name = data['name']
-    query = f"INSERT INTO clients (name) VALUES ('{name}') RETURNING id"
-    new_id = vsg.ops(query=query, operation="INSERT", table="clients")
-    return jsonify({'id': new_id, 'name': name}), 201
+# INSERT with version tracking
+query = "INSERT INTO clients (name) VALUES ('John') RETURNING id"
+vsg.ops(query=query, operation="INSERT", table="clients")
 ```
 
-<br />
+<br/>
 
-## API Endpoints (REST)
+## REST API (Flask Demo)
 
-| Method | Path                    | Description                            |
+| Method | Endpoint                | Description                            |
 |--------|-------------------------|----------------------------------------|
-| POST   | `/clients`              | Create a client and audit              |
-| GET    | `/clients`              | List all clients                       |
-| GET    | `/audit/clients`        | Raw audit log                          |
-| GET    | `/vsg/logs?table=...`   | Git-style log for a table              |
-| POST   | `/vsg/rollback`         | Rollback to current                    |
-| POST   | `/vsg/rollback/<uuid>`  | Rollback to specific UUID              |
-| POST   | `/vsg/restore/<uuid>`   | Restore table to a version             |
-| POST   | `/vsg/merge/<uuid>`     | Merge a version into current           |
-| POST   | `/vsg/checkout/<uuid>`  | Restore and register as new version    |
+| POST   | `/clients`              | Creates client and registers snapshot  |
+| GET    | `/clients`              | Lists all clients                      |
+| GET    | `/vsg/logs?table=...`   | Shows Git-style log for a table        |
+| POST   | `/vsg/rollback`         | Rollback to latest version             |
+| POST   | `/vsg/rollback/<uuid>`  | Rollback to specific version           |
+| POST   | `/vsg/restore/<uuid>`   | Restore a snapshot (no commit)         |
+| POST   | `/vsg/merge/<uuid>`     | Merge snapshot into current            |
+| POST   | `/vsg/checkout/<uuid>`  | Restore and create new commit          |
 
-<br />
+<br/>
 
-## Log Output Example
+## Example Log Output
 
 ```json
 [
   {
-    "uuid": "2ad7801f-...",
+    "uuid": "91ffc25d-...",
     "operation": "INSERT",
     "user_id": "system",
-    "created_at": "2025-04-13T17:59:30.004162+00:00",
+    "created_at": "2025-04-13T17:36:39.978181+00:00",
     "is_current": true
   }
 ]
 ```
 
-<br />
+<br/>
 
 ## Test Script
-
-Run the following to test the full versioning lifecycle:
 
 ```bash
 chmod +x examples/test_vsg_flow.sh
 ./examples/test_vsg_flow.sh
 ```
 
-This script tests:
-- Insertions
-- Log reading
-- Checkout
-- Rollback
-- Restore
-- Merge
+This script validates:
 
+- Insert operations and snapshot generation
+- Checkout and rollback behaviors
+- Merge mechanics
+- Conflict detection (simulated users with divergent histories)
+
+<br/>
+
+## Contributing
+
+- PRs welcome for support of migrations, GraphQL integration, Graphviz tree rendering
+- Coming soon: `vsg diff <uuid1> <uuid2>` for visual diff of table state
+
+<br/>
+
+## License
+
+MIT License – use freely, audit responsibly.
+
+<br />
