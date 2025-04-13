@@ -90,7 +90,7 @@ Requirements:
 from dbvsg.core import DBVSG
 
 dbvsg = DBVSG()
-dbvsg.conn("postgresql://admin:secret@localhost:5432/demo")
+dbvsg.conn("postgresql://admin:secret@localhost:5433/demo")
 
 query = "INSERT INTO clients (name) VALUES ('John') RETURNING id"
 dbvsg.ops(query=query, operation="INSERT", table="clients")
@@ -110,7 +110,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: secret
     ports:
-      - "5433:5432"
+      - "5433:5433"
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 ```
@@ -131,7 +131,7 @@ docker-compose up -d
 from dbvsg.core import DBVSG
 
 dbvsg = DBVSG()
-dbvsg.conn("postgresql://admin:secret@localhost:5432/demo")
+dbvsg.conn("postgresql://admin:secret@localhost:5433/demo")
 
 # Insert
 dbvsg.ops("INSERT INTO clients (name) VALUES ('Alpha') RETURNING id", "INSERT", "clients")
